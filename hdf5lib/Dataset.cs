@@ -14,138 +14,99 @@ namespace hdf5lib
 {
     public class Dataset
     {
-        private long _fileID;
-        private string name;
-        private DataType datatype;
-        private ulong[] dims;
-        private byte[]? data;
-        private ChannelOrder channelOrder;
-        private ulong[]? maxdims;
-        private ulong[]? chunks;
-        private int? compressionFilter;
-        private uint[]? compressionOpts;
-
-        private long dataSpaceID = -1;
-        private long plistID = -1;
-        private long _dsetID = -1;
-        private long dtype = -1;
-        private int count = 0;
+        //private long fileID;
+        //private string name;
+        //private byte[] data;
+        //private ChannelOrder channelOrder;
+        //private ulong[] maxdims;
+        //private int count = 0;
 
 
+        /////////////
+
+        private long datasetID;
+        private long dataType;
+
+        private long dataSpaceID;
+        private long propertyListID;
+
+        private ulong[] dimensions;// i dont think this is needed after the ctor
+        private ulong[] chunks; // i dont think this is needed after the ctor
+        private int compressionFilter; // i dont think this is needed after the ctor
+        private uint[] compressionOpts; // i dont think this is needed after the ctor
 
 
-        public Dataset(
-                long fileID,
-                string name,
-                DataType datatype,
-                ulong[] dims,
-                ChannelOrder channelOrder = ChannelOrder.TCZYX,
-                byte[] data = null,
-                ulong[] maxdims = null,
-                ulong[] chunks = null,
-                int compressionFilter = -1,
-                uint[] compressionOpts = null)
+        public Dataset(long fileID, string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter =0, uint[] compressionOptions=null)
         {
-            this._fileID = fileID;
-            this.name = name;
-            this.datatype = datatype;
-            this.dims = dims;
-            this.channelOrder = channelOrder;
-            this.data = data;
-            this.maxdims = maxdims;
-            this.chunks = chunks;
-            this.compressionFilter = compressionFilter;
-            this.compressionOpts = compressionOpts;
-            Create();
-        }
-
-
-
-        private void Create()
-        {
-            switch(datatype)
-            {
-                case DataType.NATIVE_FLOAT:
-                    dtype = H5T.NATIVE_FLOAT;
-                    break;
-                case DataType.NATIVE_UINT16:
-                default:
-                    dtype = H5T.NATIVE_UINT16;
-                    break;
-            }
-
-            CreateDataSpace(dims.Length);
-            CreateParameterList(dims.Length);
-
-            _dsetID = H5D.create(_fileID, name, dtype, dataSpaceID, H5P.DEFAULT, plistID, H5P.DEFAULT);
-            CheckAndThrow(_dsetID);
-
-
-            // Special case where we want to just write out the data set
-            if (data != null)
-            {
-                Write(data);
-            }
-        }
-
-        private void CreateDataSpace(int ndims)
-        {
-            var result = H5S.create_simple(ndims, dims, null);
-            CheckAndThrow(result);
-            dataSpaceID = result;
-        }
-
-        private void CreateParameterList(int ndims)
-        {
-            plistID = H5P.create(H5P.DATASET_CREATE);
-            CheckAndThrow(plistID);
-
+            SetDataType(datatype);
+            CreateDataSpace(dimensions);
+            CreatePropertyList();
             if (chunks != null)
             {
-                if (chunks.Length != ndims)
+                SetChunk(chunks);
+                if (compressionFilter != 0 && compressionOptions != null) // TODO : convert to CompressionFilter object c#+ req
                 {
-                    throw new Exception("Chunks must be the same overall shape as dims");
-                }
-
-                // Set chunks
-                var result = H5P.set_chunk(plistID, chunks.Length, chunks);
-                CheckAndThrow(result);
-
-                if (compressionFilter != null & compressionOpts != null)
-                {
-                    var filterAvailable = H5Z.filter_avail((filter_t)compressionFilter);
-                    if (filterAvailable == 0)
-                    {
-                        throw new Exception("Filter not available");
-                    }
-                    H5P.set_filter(plistID, (filter_t)compressionFilter, 1, (IntPtr)compressionOpts.Length, compressionOpts);
+                    SetCompression(compressionFilter, compressionOptions);
                 }
             }
-            else
-            {
-                if (compressionFilter != null)
-                {
-                    throw new Exception("Can't use compression filters without chunking");
-                }
-            }
+            //TODO : there is no path for when chunks is null but not the filter
+            CreateDataset(fileID, name);
         }
 
 
-
-        private unsafe void Write(byte[] data)
+        private void SetDataType(Type dataType)
         {
-            fixed (byte* buf = data)
+            this.dataType = Utils.ConvertTypeToH5T(dataType);
+        }
+        private void CreateDataSpace(ulong[] dimensions)
+        {
+            this.dimensions = dimensions;
+            dataSpaceID = H5S.create_simple(dimensions.Length, dimensions, null);
+            CheckAndThrow(dataSpaceID);
+        }
+
+        private void CreatePropertyList()
+        {
+            propertyListID = H5P.create(H5P.DATASET_CREATE);
+            CheckAndThrow(propertyListID);
+        }
+
+
+        private void SetChunk(ulong[] chunks)
+        {
+            if (chunks.Length != dimensions.Length)
             {
-                var result = H5D.write(_dsetID, dtype, H5S.ALL, H5S.ALL, H5P.DEFAULT, (IntPtr)buf);
-                CheckAndThrow(result);
+                throw new Exception($"{nameof(chunks)} must be the same overall shape as {nameof(dimensions)}");
             }
+
+            // Set chunks
+            var result = H5P.set_chunk(propertyListID, chunks.Length, chunks);
+            CheckAndThrow(result);
+        }
+
+
+        private void SetCompression(int compressionFilter, uint[] compressionOptions)
+        {
+            var result = H5Z.filter_avail((filter_t)compressionFilter);
+            if (result == 0)
+            {
+                throw new Exception("Filter not available");
+            }
+            result = H5P.set_filter(propertyListID, (filter_t)compressionFilter, 1, (IntPtr)compressionOptions.Length, compressionOptions);
+            CheckAndThrow(result);
+        }
+
+        private void CreateDataset(long fileID, string name)
+        {
+            datasetID = H5D.create(fileID, name, dataType, dataSpaceID, H5P.DEFAULT, propertyListID, H5P.DEFAULT);
+            CheckAndThrow(datasetID);
         }
 
       
         public unsafe void Append<T>(T[] dataToWrite, ulong[] start, ulong[] count, ulong[] dimsToWrite) where T : unmanaged 
         {
             int status;
-            long mspace_id;
+            long memorySpaceID;
 
             fixed (T* buf = dataToWrite)
             fixed (ulong* startPtr = start)
@@ -154,42 +115,23 @@ namespace hdf5lib
                 status = H5S.select_hyperslab(dataSpaceID, H5S.seloper_t.SET, startPtr, null, countPtr, null);
                 CheckAndThrow(status);
 
-                mspace_id = H5S.create_simple(dimsToWrite.Length, dimsToWrite, null);
-                CheckAndThrow(mspace_id);
+                memorySpaceID = H5S.create_simple(dimsToWrite.Length, dimsToWrite, null);
+                CheckAndThrow(memorySpaceID);
 
-                status = H5D.write(_dsetID, dtype, mspace_id, dataSpaceID, H5P.DEFAULT, (IntPtr)buf);
+                status = H5D.write(datasetID, dataType, memorySpaceID, dataSpaceID, H5P.DEFAULT, (IntPtr)buf);
                 CheckAndThrow(status);
 
-                status = H5S.close(mspace_id);
+                status = H5S.close(memorySpaceID);
                 CheckAndThrow(status);
             }
+        }
+
+        public void Close()
+        {
+            H5D.close(datasetID);
         }
     }
 
 
-    public enum ChannelOrder
-    {
-        /// <summary>
-        /// Standard Imaging Order [value = 0]
-        /// </summary>
-        TCZYX = 0,
-        /// <summary>
-        /// Reversed Imaging Order [value = 1]
-        /// </summary>
-        XYZCT = 1,
-        /// <summary>
-        /// Linear Datasets [value = 2]
-        /// Used for saving 1 dimensional
-        /// datasets (ie average value of each frame or volume over time)
-        /// </summary>
-        T = 2,
-
-    } // ChannelOrder
-
-    public enum DataType : long
-    {
-        NATIVE_UINT16 = 0,
-        NATIVE_FLOAT = 1,
-    }
 
 }

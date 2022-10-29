@@ -8,7 +8,7 @@ namespace hdf5lib
 {
     public class File
     {
-        private long _fileID;
+        private long ID;
         private Dictionary<string, Dataset> datasets = new Dictionary<string, Dataset>();
 
 
@@ -20,26 +20,40 @@ namespace hdf5lib
         private void Open(string filePath)
         {
             //TODO : add read mode
-            var file = H5F.create(filePath, H5F.ACC_TRUNC, H5P.DEFAULT, H5P.DEFAULT);
-            Utils.CheckAndThrow(file);
-            _fileID = file;
+            var fileID = H5F.create(filePath, H5F.ACC_TRUNC, H5P.DEFAULT, H5P.DEFAULT);
+            Utils.CheckAndThrow(fileID);
+            ID = fileID;
+        }
+
+        /// <summary>
+        /// Closes all datasets in this file and then closes the file.
+        /// </summary>
+        public void Close()
+        {
+            foreach (var dataset in datasets.Values)
+            {
+                dataset.Close();
+            }
+            H5F.close(ID);
         }
 
 
-        public Dataset CreateDataSet(
-           string name,
-           DataType dataType,
-           ulong[] dims,
-           byte[] data = null,
-           ulong[] maxdims = null,
-           ulong[] chunks = null,
-           int compressionFilter = 0,
-           uint[] compressionOpts = null,
-           ChannelOrder channelOrder = ChannelOrder.TCZYX)
+        public Dataset CreateDataset(string name, Type datatype, ulong[] dims, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
         {
-            var dset = new H5DataSet(_fileID, name, dataType, dims, channelOrder, data, maxdims, chunks, compressionFilter, compressionOpts);
-            datasets.Add(dset);
-            return dset;
+            var dataset = new Dataset(ID, name, datatype, dims, chunks, compressionFilter, compressionOptions);
+            datasets.Add(name,dataset);
+            return dataset;
+        }
+
+
+        /// <summary>
+        /// Returns a link to an existing dataset in the file.
+        /// </summary>
+        /// <param name="name">name of the dataset</param>
+        /// <returns></returns>
+        public Dataset this[string name]
+        {
+            get => datasets[name];
         }
 
     }
