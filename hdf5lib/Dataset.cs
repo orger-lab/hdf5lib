@@ -14,6 +14,9 @@ namespace hdf5lib
 {
     public class Dataset
     {
+        private Dictionary<string, Attribute> atributes = new Dictionary<string, Attribute>();
+
+
         //private long fileID;
         //private string name;
         //private byte[] data;
@@ -36,7 +39,53 @@ namespace hdf5lib
         private uint[] compressionOpts; // i dont think this is needed after the ctor
 
 
-        public Dataset(long fileID, string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter =0, uint[] compressionOptions=null)
+
+        /*
+         
+         H5PY METHODS
+            __bool__()
+            __getitem__(args)
+            __setitem__(args)
+            asstr(encoding=None, errors='strict')
+            astype(dtype)
+            fields(names)
+            iter_chunks()
+            len()
+            make_scale(name='')
+            read_direct(array, source_sel=None, dest_sel=None)
+            resize(size, axis=None)
+            virtual_sources()
+            write_direct(source, source_sel=None, dest_sel=None)
+
+        H5PY PROPERTIES
+            attrs
+            chunks
+            compression
+            compression_opts
+            dims
+            dtype
+            external
+            file
+            fillvalue
+            fletcher32
+            id
+            is_virtual
+            maxshape
+            name
+            nbytes
+            ndim
+            parent
+            ref
+            regionref
+            scaleoffset
+            shape
+            shuffle
+            size 
+
+         */
+
+
+        public Dataset(long fileID, string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
         {
             SetDataType(datatype);
             CreateDataSpace(dimensions);
@@ -133,5 +182,30 @@ namespace hdf5lib
     }
 
 
+
+
+    //   static void GetDims()
+    //{
+    //    var space = H5D.get_space(datasetID);
+    //    var ndims = H5S.get_simple_extent_ndims(space);
+    //    ulong[] dims = new ulong[ndims];
+    //    ulong[] maxdims = new ulong[ndims];
+    //    H5S.get_simple_extent_dims(space, dims, maxdims);
+    //}
+
+    public static void ReadDataset(string file, string dataset, out double[] data)
+    {
+        var fileID = H5F.open(file, H5F.ACC_RDONLY);
+        var datasetID = H5D.open(fileID, $"/{dataset}");
+        unsafe
+        {
+            fixed (double* ptr = data)
+            {
+                var status = H5D.read(datasetID, H5T.NATIVE_DOUBLE, H5S.ALL, H5S.ALL, H5P.DEFAULT, (IntPtr)ptr);
+            }
+        }
+        H5D.close(datasetID);
+        H5F.close(fileID);
+    }
 
 }

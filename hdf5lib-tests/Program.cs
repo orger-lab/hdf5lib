@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.Text;
+using System.Xml.Linq;
 
 using HDF.PInvoke;
 
@@ -15,30 +16,37 @@ namespace hdf5lib_tests
 
 
             var filePath = @"C:\Users\alexa\OneDrive\Desktop\test.h5";
-            var fileID  = H5F.create(filePath, H5F.ACC_TRUNC, H5P.DEFAULT, H5P.DEFAULT);
+            
+            var fileID = H5F.open(filePath, H5F.ACC_RDONLY);
 
 
-            ulong[] dims = new ulong[] {10,10};
-            var dataspace = H5S.create_simple(dims.Length, dims, null);
+            var dataset = "dsetname";
+            var datasetID = H5D.open(fileID, $"/{dataset}");
+
+
+            H5O.info_t info = new H5O.info_t();
+            var r = H5O.get_info(datasetID, ref info);
+
+            H5.ih_info_t
+
+            H5O.get_info_by_idx(datasetID,"/", H5.index_t.NAME, H5.iter_order_t.INC, 2, ref info);
 
 
 
-            var pList = H5P.create(H5P.DATASET_CREATE);
+            //for (int i = 0; i < (int)info.num_attrs; i++)
+            //{
+            //    H5A.get_info_by_idx()
+            //}
 
 
+            //var t = H5A.get_type(datasetID);
 
-            ulong[] chunks = new ulong[] {5,5};
-            var result = H5P.set_chunk(pList, chunks.Length, chunks);
+            //int size = 256;
+            //byte[] encoded = new byte[size];
+            //var sn = H5A.get_name(datasetID, (IntPtr)size, encoded);
+            //string decoded = Encoding.ASCII.GetString(encoded);
 
-
-
-
-            int compressionFilter = 1;
-            uint[] compressionOpts = new uint[] { 9 };
-                
-                
-            var filter = H5P.set_filter(pList, (filter_t)compressionFilter, 1, (IntPtr)compressionOpts.Length, compressionOpts);
-
+            //var storage = H5A.get_storage_size(datasetID);
 
 
 
@@ -55,18 +63,6 @@ namespace hdf5lib_tests
     }
 
 
-    public  class test
-    {
-
-        public test(int a)
-        {
-            Console.WriteLine("A");
-        }
-
-        public test(int a, int b) : this(a)
-        {
-            Console.WriteLine("B");
-        
-        }
-    }
+   
 }
+

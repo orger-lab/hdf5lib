@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,7 +23,13 @@ namespace hdf5lib
         /// Converts all filter paramenters to the standard format used by the HDF5 library
         /// </summary>
         /// <returns></returns>
-        uint[] ConvertFilterParameters();
+        uint[] Serialize();
+
+        /// <summary>
+        /// Converts all filter paramenters from the standard format used by the HDF5 library to the respective variables.
+        /// </summary>
+        /// <returns></returns>
+        void Deserialize(uint[] parameterArray);
 
     }
 
@@ -35,7 +42,13 @@ namespace hdf5lib
     {
         public int ID => 0;
 
-        public uint[] ConvertFilterParameters() => null;
+        public void Deserialize(uint[] parameterArray)
+        {
+        }
+
+        public uint[] Serialize() => null;
+
+
     }
 
 
@@ -60,14 +73,35 @@ namespace hdf5lib
                 }
             }
         }
-        public uint[] ConvertFilterParameters() => new uint[] { Level };
+        public uint[] Serialize() => new uint[] { Level };
+
+        public void Deserialize(uint[] parameterArray)
+        {
+            if (parameterArray.Length != 1)
+                throw new ArgumentException("Number of elements in the array does not match the requierements");
+
+            Level = parameterArray[0];
+        }
     }
 
     public class B5D : ICompressionFilter
     {
         public int ID => 306;
 
-        public uint[] ConvertFilterParameters() => new uint[] { Quantization *1000, Mode, CameraConversion *1000, CameraOffset, ReadNoise *1000, TileSize };
+        public uint[] Serialize() => new uint[] { Quantization * 1000, Mode, CameraConversion * 1000, CameraOffset, ReadNoise * 1000, TileSize };
+
+        public void Deserialize(uint[] parameterArray)
+        {
+            if (parameterArray.Length != 6)
+                throw new ArgumentException("Number of elements in the array does not match the requierements");
+
+            Quantization = parameterArray[0] / 1000;
+            Mode = parameterArray[1];
+            CameraConversion = parameterArray[2] / 1000;
+            CameraOffset = parameterArray[3];
+            ReadNoise = parameterArray[4] / 1000;
+            TileSize = parameterArray[5];
+        }
 
 
         private uint _quantization = 0;

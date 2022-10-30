@@ -10,6 +10,7 @@ namespace hdf5lib
     {
         private long ID;
         private Dictionary<string, Dataset> datasets = new Dictionary<string, Dataset>();
+        private Dictionary<string, Attribute> atributes = new Dictionary<string, Attribute>();
 
 
         public File(string filePath)
