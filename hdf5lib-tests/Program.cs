@@ -1,9 +1,14 @@
-﻿using System.Text;
+﻿using System.Runtime.InteropServices;
+using System.Text;
 using System.Xml.Linq;
 
 using HDF.PInvoke;
 
+using static HDF.PInvoke.H5O;
+using static HDF.PInvoke.H5T;
 using static HDF.PInvoke.H5Z;
+
+using hdf5lib;
 
 namespace hdf5lib_tests
 {
@@ -14,50 +19,55 @@ namespace hdf5lib_tests
             Console.WriteLine("Hello, World!");
 
 
-
-            var filePath = @"C:\Users\alexa\OneDrive\Desktop\test.h5";
-            
-            var fileID = H5F.open(filePath, H5F.ACC_RDONLY);
-
-
-            var dataset = "dsetname";
-            var datasetID = H5D.open(fileID, $"/{dataset}");
-
-
-            H5O.info_t info = new H5O.info_t();
-            var r = H5O.get_info(datasetID, ref info);
-
-            H5.ih_info_t
-
-            H5O.get_info_by_idx(datasetID,"/", H5.index_t.NAME, H5.iter_order_t.INC, 2, ref info);
-
-
-
-            //for (int i = 0; i < (int)info.num_attrs; i++)
+            //   static void GetDims()
             //{
-            //    H5A.get_info_by_idx()
+            //    var space = H5D.get_space(datasetID);
+            //    var ndims = H5S.get_simple_extent_ndims(space);
+            //    ulong[] dims = new ulong[ndims];
+            //    ulong[] maxdims = new ulong[ndims];
+            //    H5S.get_simple_extent_dims(space, dims, maxdims);
             //}
 
 
-            //var t = H5A.get_type(datasetID);
-
-            //int size = 256;
-            //byte[] encoded = new byte[size];
-            //var sn = H5A.get_name(datasetID, (IntPtr)size, encoded);
-            //string decoded = Encoding.ASCII.GetString(encoded);
-
-            //var storage = H5A.get_storage_size(datasetID);
 
 
+            var filePath = @"..\..\..\..\test.h5";
+
+            var fileID = H5F.open(filePath, H5F.ACC_RDONLY);
+
+            var dset = H5D.open(fileID, "dsetname");
+
+
+            var dt = H5D.get_type(dset);
+
+            var t = H5T.get_native_type(dt, direction_t.ASCEND);
+
+
+            Console.WriteLine(hdf5lib.Utils.ConvertTypeToH5Type2(dt));
+            Console.WriteLine(hdf5lib.Utils.ConvertTypeToH5Type2(t));
 
 
 
 
+            //ulong idx = 0;
+            //H5L.iterate(fileID, H5.index_t.NAME, H5.iter_order_t.INC, ref idx, op, IntPtr.Zero);
+
+            //int op(long loc_id, IntPtr name, ref H5L.info_t info, IntPtr op_data)
+            //{
+            //    Console.WriteLine("------");
+            //    var nm = Marshal.PtrToStringAnsi(name);
+            //    Console.WriteLine($"i {nm}");
+            //    var group = H5G.open(loc_id, $"/{nm}", H5P.DEFAULT);
+            //    Console.WriteLine(group);
+            //    Console.WriteLine($"o {nm}");
+            //    H5G.close(group);
+            //    return 0;
+            //}
+
+            //H5File fl = new hdf5lib.H5File(filePath, FileAccessMode.ReadOnly);
 
 
         }
-
-        
 
 
     }
@@ -66,3 +76,4 @@ namespace hdf5lib_tests
    
 }
 
+;
