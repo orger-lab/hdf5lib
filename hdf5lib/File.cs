@@ -10,7 +10,7 @@ namespace hdf5lib
     public class H5File
     {
         private long ID;
-        private Dictionary<string, Dataset> datasets = new Dictionary<string, Dataset>();
+        private Dictionary<string, H5DataSet> datasets = new Dictionary<string, H5DataSet>();
         private Dictionary<string, Attribute> atributes = new Dictionary<string, Attribute>();
 
 
@@ -44,7 +44,7 @@ namespace hdf5lib
             int op(long loc_id, IntPtr name, ref H5L.info_t info, IntPtr op_data)
             {
                 var datasetName = Marshal.PtrToStringAnsi(name);
-                var dataset = new Dataset(this.ID, datasetName);
+                var dataset = new H5DataSet(this.ID, datasetName);
                 this.datasets.Add(datasetName,dataset);
                 return 0;
             }
@@ -66,9 +66,9 @@ namespace hdf5lib
         }
 
 
-        public Dataset CreateDataset(string name, Type datatype, ulong[] dims, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
+        public H5DataSet CreateDataset(string name, Type datatype, ulong[] dims, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
         {
-            var dataset = new Dataset(ID, name, datatype, dims, chunks, compressionFilter, compressionOptions);
+            var dataset = new H5DataSet(ID, name, datatype, dims, chunks, compressionFilter, compressionOptions);
             datasets.Add(name,dataset);
             return dataset;
         }
@@ -79,7 +79,7 @@ namespace hdf5lib
         /// </summary>
         /// <param name="name">name of the dataset</param>
         /// <returns></returns>
-        public Dataset this[string name]
+        public H5DataSet this[string name]
         {
             get => datasets[name];
         }

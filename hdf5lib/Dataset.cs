@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using static hdf5lib.Utils;
 
 
 namespace hdf5lib
 {
-    public class Dataset
+    public class H5DataSet
     {
         private Dictionary<string, Attribute> atributes = new Dictionary<string, Attribute>();
 
@@ -84,7 +85,7 @@ namespace hdf5lib
          */
 
 
-        public Dataset(long fileID, string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
+        public H5DataSet(long fileID, string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
         {
             SetDataType(datatype);
             CreateDataSpace(dimensions);
@@ -202,6 +203,87 @@ namespace hdf5lib
         }
 
 
+        public unsafe void Read<T>(out T[] data) where T : unmanaged
+        {
+            // TODO : add simple rank test to see if the data fits in the selected memory space
+            int status;
+
+            fixed (T* buf = data)
+            {
+
+                status = H5D.read(ID, H5T.NATIVE_UINT16, H5S.ALL, H5S.ALL, H5P.DEFAULT, (IntPtr)buf);
+                CheckAndThrow(status);
+            }
+        }
+
+
+        // TODO : read method that returns T[] like object since that should be faster
+        // TODO : read method that returns Array to help return multidimentional data
+        // TODO : read method with ways to section the data
+
+        public Array Read()
+        {
+            // TODO : add simple rank test to see if the data fits in the selected memory space
+
+            Array array = Array.CreateInstance(typeof(ushort), new int[] { 10, 10 });
+            var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+
+            IntPtr buf = handle.AddrOfPinnedObject();
+
+            int status;
+
+            status = H5D.read(ID, H5T.NATIVE_UINT16, H5S.ALL, H5S.ALL, H5P.DEFAULT, (IntPtr)buf);
+            CheckAndThrow(status);
+            handle.Free();
+            return array;
+        }
+
+
+        public Array Read(ulong[] start, ulong[] count, ulong[] dataShape)
+        {
+            var shape = Array.ConvertAll(dataShape, (p => (int)p));
+
+
+            Array array = Array.CreateInstance(typeof(ushort), shape);
+            var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+
+            IntPtr buf = handle.AddrOfPinnedObject();
+
+            int status;
+
+            //status = H5D.read(ID, H5T.NATIVE_UINT16, H5S.ALL, H5S.ALL, H5P.DEFAULT, (IntPtr)buf);
+            //CheckAndThrow(status);
+
+
+            long memorySpaceID;
+
+            //fixed (T* buf = data)
+            unsafe
+            {
+                fixed (ulong* startPtr = start)
+                fixed (ulong* countPtr = count)
+                {
+                    status = H5S.select_hyperslab(dataSpaceID, H5S.seloper_t.SET, startPtr, null, countPtr, null);
+                    CheckAndThrow(status);
+
+                    memorySpaceID = H5S.create_simple(dataShape.Length, dataShape, null);
+                    CheckAndThrow(memorySpaceID);
+
+                    status = H5D.read(ID, H5T.NATIVE_UINT16, memorySpaceID, dataSpaceID, H5P.DEFAULT, buf);
+                    CheckAndThrow(status);
+
+                    status = H5S.close(memorySpaceID);
+                    CheckAndThrow(status);
+                }
+            }
+
+
+            handle.Free();
+            return array;
+
+        }
+
+
 
         public void Close()
         {
@@ -244,21 +326,21 @@ namespace hdf5lib
         /// </summary>
         /// <param name="fileID"></param>
         /// <param name="name"></param>
-        public Dataset(long fileID, string name)
+        public H5DataSet(long fileID, string name)
         {
             // open file
             ID = H5D.open(fileID, $"/{name}");
             CheckAndThrow(ID);
 
             // get spaceid
-            spaceID = H5D.get_space(ID);
-            CheckAndThrow(spaceID);
+            dataSpaceID = H5D.get_space(ID);
+            CheckAndThrow(dataSpaceID);
 
             // get shape of the data in the dataset
-            var ndims = H5S.get_simple_extent_ndims(spaceID);
+            var ndims = H5S.get_simple_extent_ndims(dataSpaceID);
             Dimensions = new ulong[ndims];
             MaxDimensions = new ulong[ndims];
-            var result = H5S.get_simple_extent_dims(spaceID,Dimensions,MaxDimensions);
+            var result = H5S.get_simple_extent_dims(dataSpaceID,Dimensions,MaxDimensions);
             CheckAndThrow(result);
 
             // get the property list
@@ -277,7 +359,7 @@ namespace hdf5lib
         public ulong[] MaxDimensions { get; private set; }
         public ulong[] Chunks { get; private set; }
 
-        private long spaceID;
+        //private long dataspaceID;
 
     }   
 }

@@ -67,90 +67,80 @@ namespace hdf5lib
             throw new NotSupportedException($"Type {type} is not supported.");
         }
 
-
         public static string ConvertH5TToType(long type)
         {
-            // Boolean
-            // bool
-            if (type == H5T.NATIVE_HBOOL)
-                return "bool";
+            var size = (int)H5T.get_size(type);
+            //var endianess = H5T.get_order(type);
+            var clss = H5T.get_class(type);
+            var signal = H5T.get_sign(type);
 
-            // Integers
-            // sbyte
-            if (type == H5T.NATIVE_INT8)
-                return "sbyte";
-            // byte
-            if (type == H5T.NATIVE_UINT8)
-                return "byte";
-            // short
-            if (type == H5T.NATIVE_INT16)
-                return "short";
-            // ushort
-            if (type == H5T.NATIVE_UINT16)
-                return "ushort";
-            // int
-            if (type == H5T.NATIVE_INT32)
-                return "int";
-            // uint
-            if (type == H5T.NATIVE_UINT32)
-                return "uint";
-            // long
-            if (type == H5T.NATIVE_INT64)
-                return "long";
-            // ulong
-            if (type == H5T.NATIVE_UINT64)
-                return "ulong";
+            
+            switch (clss)
+            {
+                case H5T.class_t.INTEGER:
+                    if (signal == H5T.sign_t.NONE) //unsigned
+                    {
+                        switch (size)
+                        {
+                            case 1: return "uint8";
+                            case 2: return "uint16";
+                            case 4: return "uint32";
+                            case 8: return "uint64";
+                            default: throw new InvalidCastException();
+                        }
+                    }
+                    else
+                    {
+                        switch (size)
+                        {
+                            case 1: return "int8";
+                            case 2: return "int16";
+                            case 4: return "int32";
+                            case 8: return "int64";
+                            default: throw new InvalidCastException();
+                        }
+                    }
 
-            // Floating point
-            // float
-            if (type == H5T.NATIVE_FLOAT)
-                return "float";
-            // double
-            if (type == H5T.NATIVE_DOUBLE)
-                return "double";
+                case H5T.class_t.FLOAT:
+                    if (size == 4)
+                        return "float";
+                    if (size == 8)
+                        return "double";
+                    throw new InvalidCastException();
 
-            //throw new NotSupportedException($"Type {type} is not supported.");
-            return($"Type {type} is not supported.");
-        }
+                    
+
+                default: throw new NotImplementedException();
+            }
 
 
-        public static string ConvertTypeToH5Type2(long type)
-        {
 
-            if (type == H5T.NATIVE_CHAR)
-                return "H5T_NATIVE_CHAR";
-            if (type == H5T.NATIVE_SHORT)
-                return "H5T_NATIVE_SHORT";
-            if (type == H5T.NATIVE_INT)
-                return "H5T_NATIVE_INT";
-            if (type == H5T.NATIVE_LONG)
-                return "H5T_NATIVE_LONG";
-            if (type == H5T.NATIVE_LLONG)
-                return "H5T_NATIVE_LLONG";
-            if (type == H5T.NATIVE_UCHAR)
-                return "H5T_NATIVE_UCHAR";
-            if (type == H5T.NATIVE_USHORT)
-                return "H5T_NATIVE_USHORT";
-            if (type == H5T.NATIVE_UINT)
-                return "H5T_NATIVE_UINT";
-            if (type == H5T.NATIVE_ULONG)
-                return "H5T_NATIVE_ULONG";
-            if (type == H5T.NATIVE_ULLONG)
-                return "H5T_NATIVE_ULLONG";
-            if (type == H5T.NATIVE_FLOAT)
-                return "H5T_NATIVE_FLOAT";
-            if (type == H5T.NATIVE_DOUBLE)
-                return "H5T_NATIVE_DOUBLE";
-            if (type == H5T.NATIVE_LDOUBLE)
-                return "H5T_NATIVE_LDOUBLE";
-            if (type == H5T.NATIVE_B8)
-                return "H5T_NATIVE_B8";
-            if (type == H5T.NATIVE_B16)
-                return "H5T_NATIVE_B16";
-            if (type == H5T.NATIVE_B32)
-                return "H5T_NATIVE_B32";
-            if (type == H5T.NATIVE_B64)
-                return "H5T_NATIVE_B64";
+
+
+            //H5T_INTEGER
+            //    H5T_ORDER_BE
+
+
+            //size_t sz = H5Tget_size(type);
+            //if (sz > 4)         // max 32 bit numbers are supported: 8/16 bit (u)int, float
+            //    return 0;
+
+            //H5T_order_t ord = H5Tget_order(type);
+            //switch (H5Tget_class(type))
+            //{
+            //    case H5T_INTEGER:
+            //        if (ord == H5T_ORDER_BE)
+            //            return 0;
+            //        if (sz > 2)     // max 16 bit intergers are supported
+            //            return 0;
+            //        break;
+            //    case H5T_FLOAT:
+            //        if (sz > 4)     // max 32 bit (single precision) floats are supported
+            //            return 0;
+            //        break;
+            //    default:
+            //        return 0;
+
 
             return "nope";
 
