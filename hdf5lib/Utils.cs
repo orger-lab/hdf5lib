@@ -67,25 +67,31 @@ namespace hdf5lib
             throw new NotSupportedException($"Type {type} is not supported.");
         }
 
-        public static string ConvertH5TToType(long type)
+        /// <summary>
+        /// Converts an H5T type object to the native Type object.
+        /// </summary>
+        /// <param name="type">handle the to the H5T object</param>
+        /// <returns></returns>
+        /// <exception cref="InvalidCastException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public static Type ConvertH5TToType(long type)
         {
             var size = (int)H5T.get_size(type);
             //var endianess = H5T.get_order(type);
             var clss = H5T.get_class(type);
             var signal = H5T.get_sign(type);
 
-            
             switch (clss)
             {
                 case H5T.class_t.INTEGER:
-                    if (signal == H5T.sign_t.NONE) //unsigned
+                    if (signal == H5T.sign_t.NONE)
                     {
                         switch (size)
                         {
-                            case 1: return "uint8";
-                            case 2: return "uint16";
-                            case 4: return "uint32";
-                            case 8: return "uint64";
+                            case 1: return typeof(byte);
+                            case 2: return typeof(ushort);
+                            case 4: return typeof(uint);
+                            case 8: return typeof(ulong);
                             default: throw new InvalidCastException();
                         }
                     }
@@ -93,58 +99,22 @@ namespace hdf5lib
                     {
                         switch (size)
                         {
-                            case 1: return "int8";
-                            case 2: return "int16";
-                            case 4: return "int32";
-                            case 8: return "int64";
+                            case 1: return typeof(sbyte);
+                            case 2: return typeof(short);
+                            case 4: return typeof(int);
+                            case 8: return typeof(long);
                             default: throw new InvalidCastException();
                         }
                     }
-
                 case H5T.class_t.FLOAT:
                     if (size == 4)
-                        return "float";
+                        return typeof(float);
                     if (size == 8)
-                        return "double";
+                        return typeof(double);
                     throw new InvalidCastException();
-
-                    
 
                 default: throw new NotImplementedException();
             }
-
-
-
-
-
-            //H5T_INTEGER
-            //    H5T_ORDER_BE
-
-
-            //size_t sz = H5Tget_size(type);
-            //if (sz > 4)         // max 32 bit numbers are supported: 8/16 bit (u)int, float
-            //    return 0;
-
-            //H5T_order_t ord = H5Tget_order(type);
-            //switch (H5Tget_class(type))
-            //{
-            //    case H5T_INTEGER:
-            //        if (ord == H5T_ORDER_BE)
-            //            return 0;
-            //        if (sz > 2)     // max 16 bit intergers are supported
-            //            return 0;
-            //        break;
-            //    case H5T_FLOAT:
-            //        if (sz > 4)     // max 32 bit (single precision) floats are supported
-            //            return 0;
-            //        break;
-            //    default:
-            //        return 0;
-
-
-            return "nope";
-
         }
-
     }
 }

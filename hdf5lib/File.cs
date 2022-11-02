@@ -11,7 +11,7 @@ namespace hdf5lib
     {
         private long ID;
         private Dictionary<string, H5DataSet> datasets = new Dictionary<string, H5DataSet>();
-        private Dictionary<string, Attribute> atributes = new Dictionary<string, Attribute>();
+        public Dictionary<string, H5Attribute> atributes = new Dictionary<string, H5Attribute>();
 
 
         /// <summary>
@@ -58,6 +58,7 @@ namespace hdf5lib
         /// </summary>
         public void Close()
         {
+            // TODO : Also close attributes
             foreach (var dataset in datasets.Values)
             {
                 dataset.Close();
@@ -70,6 +71,8 @@ namespace hdf5lib
         {
             var dataset = new H5DataSet(ID, name, datatype, dims, chunks, compressionFilter, compressionOptions);
             datasets.Add(name,dataset);
+
+            dataset.TEst
             return dataset;
         }
 
@@ -86,24 +89,6 @@ namespace hdf5lib
 
 
 
-        /* THIS CODE GETS THE DATASET NAMES FROM THE FILE OBJECT
-         
-                     ulong idx =0;
-            H5L.iterate(fileID, H5.index_t.NAME, H5.iter_order_t.INC, ref idx , op, IntPtr.Zero);
-
-        private static int op(long loc_id, IntPtr name, ref H5L.info_t info, IntPtr op_data)
-        {
-            Console.WriteLine("------");
-            var nm = Marshal.PtrToStringAnsi(name);
-            Console.WriteLine($"i {nm}");
-            var group = H5G.open(loc_id,$"/{nm}", H5P.DEFAULT);
-            Console.WriteLine(group);
-            Console.WriteLine($"o {nm}");
-            H5G.close(group);
-            return 0;
-        }
-         
-         */
     }
 
     public enum FileAccessMode : uint
