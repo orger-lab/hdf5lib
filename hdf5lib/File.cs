@@ -72,7 +72,7 @@ namespace hdf5lib
             var dataset = new H5DataSet(ID, name, datatype, dims, chunks, compressionFilter, compressionOptions);
             datasets.Add(name,dataset);
 
-            dataset.TEst
+            
             return dataset;
         }
 

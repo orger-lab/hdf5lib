@@ -83,9 +83,9 @@ namespace hdf5lib
 
         internal H5DataSet(long fileID, string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
         {
-            SetDataType(datatype);
-            CreateDataSpace(dimensions);
-            CreatePropertyList();
+            SetDataType(datatype); // no fileid 
+            CreateDataSpace(dimensions); // no fileid 
+            CreatePropertyList(); // no fileid 
             if (chunks != null)
             {
                 SetChunk(chunks);
@@ -93,7 +93,9 @@ namespace hdf5lib
                 {
                     SetCompression(compressionFilter, compressionOptions);
                 }
-            }
+            } // no fileid 
+
+
             //TODO : there is no path for when chunks is null but not the filter
             CreateDataset(fileID, name);
         }
