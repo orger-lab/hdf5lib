@@ -2,11 +2,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
@@ -17,9 +20,10 @@ using static System.Net.WebRequestMethods;
 
 namespace hdf5lib
 {
+    [DebuggerDisplay("Name {Name}, Type {DataType.Name}, Dims ({string.Join(\", \", Dimensions)})")]
     public class H5DataSet : H5Object
     {
-        private H5Collection<H5Attribute> Attributes;
+        public H5Collection<H5Attribute> Attributes;
 
         private long dataSpaceID;
         // TODO : understand how the plist is required to update parameters after the dataset is created or loaded
@@ -81,6 +85,7 @@ namespace hdf5lib
             CheckAndThrow(result);
 
 
+            Name = name;
             // get attributes
             Attributes = H5Attribute.ExtractAll(ID);
         }
@@ -450,6 +455,24 @@ namespace hdf5lib
             H5P.close(propertyListID);
             H5S.close(dataSpaceID);
             H5D.close(ID);
+        }
+
+
+        internal static H5Collection<H5DataSet> ExtractAll(long parentID)
+        {
+            H5Collection<H5DataSet> datasets = new H5Collection<H5DataSet>(parentID);
+
+            ulong idx = 0;
+            H5L.iterate(parentID, H5.index_t.NAME, H5.iter_order_t.INC, ref idx, op, IntPtr.Zero);
+
+            int op(long loc_id, IntPtr name, ref H5L.info_t info, IntPtr op_data)
+            {
+                var datasetName = Marshal.PtrToStringAnsi(name);
+                var dataset = new H5DataSet(parentID, datasetName);
+                datasets.Add(dataset);
+                return 0;
+            }
+            return datasets;
         }
     }
 }

@@ -10,8 +10,8 @@ namespace hdf5lib
     public class H5File
     {
         private long ID;
-        private Dictionary<string, H5DataSet> datasets = new Dictionary<string, H5DataSet>();
-        public Dictionary<string, H5Attribute> atributes = new Dictionary<string, H5Attribute>();
+        public H5Collection<H5Attribute> Attributes { get; private set; }
+        public H5Collection<H5DataSet> Datasets { get; private set; }
 
 
         /// <summary>
@@ -21,10 +21,11 @@ namespace hdf5lib
         /// <param name="mode"></param>
         public H5File(string filePath, FileCreationMode mode = FileCreationMode.Fail)
         {
-            
-            var fileID = H5F.create(filePath, (uint)mode, H5P.DEFAULT, H5P.DEFAULT);
-            Utils.CheckAndThrow(fileID);
-            ID = fileID;
+            ID = H5F.create(filePath, (uint)mode, H5P.DEFAULT, H5P.DEFAULT);
+            Utils.CheckAndThrow(ID);
+
+            Datasets = new H5Collection<H5DataSet>(ID);
+            Attributes = new H5Collection<H5Attribute>(ID);
         }
 
         /// <summary>
@@ -34,11 +35,11 @@ namespace hdf5lib
         /// <param name="mode"></param>
         public H5File(string filePath, FileAccessMode mode = FileAccessMode.ReadOnly)
         {
-            var fileID = H5F.open(filePath, (uint)mode);
-            Utils.CheckAndThrow(fileID);
-            ID = fileID;
+            ID = H5F.open(filePath, (uint)mode);
+            Utils.CheckAndThrow(ID);
 
-            
+            Datasets = H5DataSet.ExtractAll(ID);
+            Attributes  = H5Attribute.ExtractAll(ID);
         }
 
 
@@ -49,23 +50,14 @@ namespace hdf5lib
         /// </summary>
         public void Close()
         {
-            // TODO : Also close attributes
-            foreach (var dataset in datasets.Values)
-            {
-                dataset.Close();
-            }
-            H5F.close(ID);
+            //// TODO : Also close attributes
+            //foreach (var dataset in datasets.Values)
+            //{
+            //    dataset.Close();
+            //}
+            //H5F.close(ID);
         }
 
-
-        public H5DataSet CreateDataset(string name, Type datatype, ulong[] dims, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
-        {
-            var dataset = new H5DataSet(ID, name, datatype, dims, chunks, compressionFilter, compressionOptions);
-            datasets.Add(name,dataset);
-
-            
-            return dataset;
-        }
 
 
         /// <summary>
@@ -75,7 +67,7 @@ namespace hdf5lib
         /// <returns></returns>
         public H5DataSet this[string name]
         {
-            get => datasets[name];
+            get => Datasets[name];
         }
 
 

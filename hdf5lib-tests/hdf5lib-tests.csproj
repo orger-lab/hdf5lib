@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="HDF.PInvoke.1.10" Version="1.10.612" />
-    <PackageReference Include="ILNumerics.IO.HDF5" Version="6.0.148" />
   </ItemGroup>
 
   <ItemGroup>

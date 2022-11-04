@@ -31,8 +31,9 @@ namespace hdf5lib
     /// Represents a collection of <see cref="H5Object"/> with controlled access.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal sealed class H5Collection<T> where T : H5Object
+    public sealed class H5Collection<T> where T : H5Object
     {
+        // TODO : this needs to implement IENUMEBRABLE
         Dictionary<string, T> dictonary;
         long parentID;
 

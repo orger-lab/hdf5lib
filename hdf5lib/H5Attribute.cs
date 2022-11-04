@@ -18,7 +18,7 @@ using static hdf5lib.Utils;
 // TODO : add code to read from file.
 // TODO : function that returns all attributes of a parentID
 // TODO : methods to read and write strings
-public class H5Attribute : H5Object 
+public class H5Attribute : H5Object
 {
     long dataSpaceID;
     public Type DataType { get; private set; }
@@ -32,21 +32,36 @@ public class H5Attribute : H5Object
 
     public H5Attribute(string name, Array value)
     {
+        Name = name;
         Data = value;
         DataType = value.GetType().GetElementType();
         H5TDataType =  Utils.ConvertTypeToH5T(DataType);
 
-        CreateDataSpace(Data);
+        //CreateDataSpace(Data);
     }
 
+
+    internal H5Attribute(string name)
+    {
+        Name=name;
+    }
 
 
     internal override void Create(long parentID)
     {
-        if (ID == 0)
+        if (Data == null)
         {
-            CreateAttribute(parentID);
+            Read(parentID);
         }
+        else
+        {
+            CreateDataSpace(Data);
+            CreateAttribute(parentID);
+            Write();
+        Close();
+
+        }
+
     }
 
 
@@ -82,25 +97,44 @@ public class H5Attribute : H5Object
         handle.Free();
     }
 
-    void Read()
+    void Read(long parentID)
     {
-        //Array array = Array.CreateInstance(DataType, Array.ConvertAll(dataShape, p => (int)p));
+
+        byte[] attributeName = Encoding.ASCII.GetBytes(Name);
+
+        var attributeID = H5A.open(parentID, attributeName);
 
 
-        //var handle = GCHandle.Alloc(Data, GCHandleType.Pinned);
-        //IntPtr dataPtr = handle.AddrOfPinnedObject();
+        var typeHandle = H5A.get_type(attributeID);
+        var dataType = Utils.ConvertH5TToType(typeHandle);
+        var h5Type = Utils.ConvertTypeToH5T(dataType);
 
-        //int result = H5A.write(ID, H5TDataType, (IntPtr)dataPtr);
-        //CheckAndThrow(result);
-        //handle.Free();
+
+        var dataSpaceID = H5A.get_space(attributeID);
+
+        var ndims = H5S.get_simple_extent_ndims(dataSpaceID);
+
+        var Dimensions = new ulong[ndims];
+        var MaxDimensions = new ulong[ndims];
+
+        var result = H5S.get_simple_extent_dims(dataSpaceID, Dimensions, MaxDimensions);
+
+        Data = Array.CreateInstance(dataType, Array.ConvertAll(Dimensions, p => (int)p));
+
+        var handle = GCHandle.Alloc(Data, GCHandleType.Pinned);
+        IntPtr buf = handle.AddrOfPinnedObject();
+
+        H5A.read(attributeID, typeHandle, buf);
+
+        handle.Free();
     }
 
     internal override void Close()
     {
-        var status = H5S.close(dataSpaceID);
-        CheckAndThrow(status);
+        //var status = H5S.close(dataSpaceID);
+        //CheckAndThrow(status);
 
-        status = H5A.close(ID);
+        var status = H5A.close(ID);
         CheckAndThrow(status);
     }
 
@@ -211,7 +245,8 @@ public class H5Attribute : H5Object
         int op(long location_id, IntPtr attr_name, ref H5A.info_t ainfo, IntPtr op_data)
         {
             var attributeName = Marshal.PtrToStringAnsi(attr_name);
-            Console.WriteLine(attributeName);
+            var attribute = new H5Attribute(attributeName);
+            attributes.Add(attribute);
             return 0;
         }
 
