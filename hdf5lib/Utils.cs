@@ -23,7 +23,7 @@ namespace hdf5lib
         /// <param name="type">.NET data type</param>
         /// <returns>H5T enumerated value for the input data type</returns>
         /// <exception cref="NotSupportedException"></exception>
-        internal static long ConvertTypeToH5T(Type type)
+        public static long ConvertTypeToH5T(Type type)
         {
             // Boolean
             // bool
@@ -63,6 +63,12 @@ namespace hdf5lib
             // double
             if (type == typeof(double))
                 return H5T.NATIVE_DOUBLE;
+
+            if (type == typeof(char))
+                return H5T.NATIVE_CHAR;
+            //if (type == typeof(string))
+            //    return H5T;
+
 
             throw new NotSupportedException($"Type {type} is not supported.");
         }
@@ -112,6 +118,9 @@ namespace hdf5lib
                     if (size == 8)
                         return typeof(double);
                     throw new InvalidCastException();
+
+                case H5T.class_t.STRING:
+                    return typeof(string);
 
                 default: throw new NotImplementedException();
             }
