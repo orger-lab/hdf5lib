@@ -1,26 +1,16 @@
 ﻿using HDF.PInvoke;
 
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Xml.Linq;
 
 using static hdf5lib.Utils;
-using static System.Net.WebRequestMethods;
 
 
 namespace hdf5lib
 {
-    [DebuggerDisplay("Name {Name}, Type {DataType.Name}, Dims ({string.Join(\", \", Dimensions)})")]
+    [DebuggerDisplay("Name {Name}, Type {DataType}, Dims ({string.Join(\", \", Dimensions)})")]
     public class H5DataSet : H5Object
     {
         public H5Collection<H5Attribute> Attributes;
@@ -36,12 +26,8 @@ namespace hdf5lib
         public ulong[] MaxDimensions { get; private set; }
         public ulong[] Chunks { get; private set; }
 
-        public Type DataType { get; private set; }
+        public DataType DataType { get; private set; }
 
-        /// <summary>
-        /// internal representation of the underlying hdf5 format.
-        /// </summary>
-        private long H5TDataType;
 
 
         /// <summary>
@@ -80,7 +66,7 @@ namespace hdf5lib
 
             // set data types
             var typeHandle = H5D.get_type(ID);
-            SetDataType(ConvertH5TToType(typeHandle));
+            DataType = new DataType(typeHandle);
             result = H5T.close(typeHandle);
             CheckAndThrow(result);
 
@@ -93,9 +79,9 @@ namespace hdf5lib
         public H5DataSet(string name, Type datatype, ulong[] dimensions, ulong[] chunks = null, int compressionFilter = 0, uint[] compressionOptions = null)
         {
             Name = name;
-            SetDataType(datatype); // no fileid 
-            CreateDataSpace(dimensions); // no fileid 
-            CreatePropertyList(); // no fileid 
+            DataType = new DataType(datatype);
+            CreateDataSpace(dimensions);
+            CreatePropertyList();
             if (chunks != null)
             {
                 SetChunk(chunks);
@@ -103,18 +89,10 @@ namespace hdf5lib
                 {
                     SetCompression(compressionFilter, compressionOptions);
                 }
-            } // no fileid 
+            }
             //TODO : there is no path for when chunks is null but not the filter
         }
 
-        
-
-
-        private void SetDataType(Type dataType)
-        {
-            H5TDataType = Utils.ConvertTypeToH5T(dataType);
-            DataType = dataType;
-        }
         private void CreateDataSpace(ulong[] dimensions)
         {
             Dimensions = dimensions;
@@ -128,7 +106,6 @@ namespace hdf5lib
             propertyListID = H5P.create(H5P.DATASET_CREATE);
             CheckAndThrow(propertyListID);
         }
-
 
         private void SetChunk(ulong[] chunks)
         {
@@ -158,7 +135,7 @@ namespace hdf5lib
 
         private void CreateDataset(long fileID, string name)
         {
-            ID = H5D.create(fileID, name, H5TDataType, dataSpaceID, H5P.DEFAULT, propertyListID, H5P.DEFAULT);
+            ID = H5D.create(fileID, name, DataType.HDF5, dataSpaceID, H5P.DEFAULT, propertyListID, H5P.DEFAULT);
             CheckAndThrow(ID);
         }
 
@@ -178,7 +155,7 @@ namespace hdf5lib
                 memorySpaceID = H5S.create_simple(dimsToWrite.Length, dimsToWrite, null);
                 CheckAndThrow(memorySpaceID);
 
-                status = H5D.write(ID, H5TDataType, memorySpaceID, dataSpaceID, H5P.DEFAULT, dataToWrite);
+                status = H5D.write(ID, DataType.HDF5, memorySpaceID, dataSpaceID, H5P.DEFAULT, dataToWrite);
                 CheckAndThrow(status);
 
                 status = H5S.close(memorySpaceID);
@@ -202,7 +179,7 @@ namespace hdf5lib
                 memorySpaceID = H5S.create_simple(dimsToWrite.Length, dimsToWrite, null);
                 CheckAndThrow(memorySpaceID);
 
-                status = H5D.write(ID, H5TDataType, memorySpaceID, dataSpaceID, H5P.DEFAULT, (IntPtr)buf);
+                status = H5D.write(ID, DataType.HDF5, memorySpaceID, dataSpaceID, H5P.DEFAULT, (IntPtr)buf);
                 CheckAndThrow(status);
 
                 status = H5S.close(memorySpaceID);
@@ -236,7 +213,7 @@ namespace hdf5lib
                 memorySpaceID = H5S.create_simple(dimsToWrite.Length, dimsToWrite, null);
                 CheckAndThrow(memorySpaceID);
 
-                status = H5D.write(ID, H5TDataType, memorySpaceID, dataSpaceID, H5P.DEFAULT, dataPtr);
+                status = H5D.write(ID, DataType.HDF5, memorySpaceID, dataSpaceID, H5P.DEFAULT, dataPtr);
                 CheckAndThrow(status);
 
                 status = H5S.close(memorySpaceID);
@@ -246,8 +223,20 @@ namespace hdf5lib
             handle.Free();
         }
 
+        public unsafe void Write(ulong[] start, Array dataToWrite)
+        {
+            if (start.Length != dataToWrite.Rank)
+                throw new ArgumentException($"Input dimensions do not match. {nameof(start)} has rank {start.Length} and {nameof(dataToWrite)} has rank {dataToWrite.Rank}");
 
+            ulong[] count = new ulong[start.Length];
 
+            for (int i = 0; i < start.Length; i++)
+            {
+                count[i] = start[i] + (ulong)dataToWrite.GetLength(i);
+            }
+            
+            Write(start,count,dataToWrite); 
+        }
 
         /// <summary>
         /// Reads all data in the DataSet.
@@ -256,7 +245,7 @@ namespace hdf5lib
         /// <returns></returns>
         public void Read(IntPtr data)
         {
-            var status = H5D.read(ID, H5TDataType, H5S.ALL, H5S.ALL, H5P.DEFAULT, data);
+            var status = H5D.read(ID, DataType.HDF5, H5S.ALL, H5S.ALL, H5P.DEFAULT, data);
             CheckAndThrow(status);
         }
 
@@ -285,7 +274,7 @@ namespace hdf5lib
                     var memorySpaceID = H5S.create_simple(dataShape.Length, dataShape, null);
                     CheckAndThrow(memorySpaceID);
 
-                    status = H5D.read(ID, H5TDataType, memorySpaceID, dataSpaceID, H5P.DEFAULT, data);
+                    status = H5D.read(ID, DataType.HDF5, memorySpaceID, dataSpaceID, H5P.DEFAULT, data);
                     CheckAndThrow(status);
 
                     status = H5S.close(memorySpaceID);
@@ -300,12 +289,12 @@ namespace hdf5lib
         /// <returns></returns>
         public Array Read()
         {
-            Array array = Array.CreateInstance(DataType, Array.ConvertAll(Dimensions, p => (int)p));
+            Array array = Array.CreateInstance(DataType.Native, Array.ConvertAll(Dimensions, p => (int)p));
 
             var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             IntPtr buf = handle.AddrOfPinnedObject();
 
-            var status = H5D.read(ID, H5TDataType, H5S.ALL, H5S.ALL, H5P.DEFAULT, buf);
+            var status = H5D.read(ID, DataType.HDF5, H5S.ALL, H5S.ALL, H5P.DEFAULT, buf);
             CheckAndThrow(status);
 
             handle.Free();
@@ -324,7 +313,7 @@ namespace hdf5lib
             ValidateInputRank(start, count);
             var dataShape = CalculateFinalDataShape(start, count, removeEmpty);
 
-            Array array = Array.CreateInstance(DataType, Array.ConvertAll(dataShape, p => (int)p));
+            Array array = Array.CreateInstance(DataType.Native, Array.ConvertAll(dataShape, p => (int)p));
 
             var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
             IntPtr buf = handle.AddrOfPinnedObject();
@@ -340,7 +329,7 @@ namespace hdf5lib
                     var memorySpaceID = H5S.create_simple(dataShape.Length, dataShape, null);
                     CheckAndThrow(memorySpaceID);
 
-                    status = H5D.read(ID, H5TDataType, memorySpaceID, dataSpaceID, H5P.DEFAULT, buf);
+                    status = H5D.read(ID, DataType.HDF5, memorySpaceID, dataSpaceID, H5P.DEFAULT, buf);
                     CheckAndThrow(status);
 
                     status = H5S.close(memorySpaceID);
@@ -430,6 +419,13 @@ namespace hdf5lib
             set => Write(start,count,value);  
         }
 
+        public Array this[ulong[] start]
+        {
+            set => Write(start, value);
+        }
+
+
+
 
         // THIS WONT WORK ON .NET STANDARD
         //public Array this[params Range[] ranges]
@@ -451,7 +447,7 @@ namespace hdf5lib
 
         internal override void Close()
         {
-            // TODO : Close all attributes
+            Attributes.Close();
             H5P.close(propertyListID);
             H5S.close(dataSpaceID);
             H5D.close(ID);

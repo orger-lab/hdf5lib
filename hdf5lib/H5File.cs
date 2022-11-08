@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Runtime.InteropServices;
+﻿using HDF.PInvoke;
 
-using HDF.PInvoke;
+using System;
 
 namespace hdf5lib
 {
@@ -50,12 +47,14 @@ namespace hdf5lib
         /// </summary>
         public void Close()
         {
-            //// TODO : Also close attributes
-            //foreach (var dataset in datasets.Values)
-            //{
-            //    dataset.Close();
-            //}
-            //H5F.close(ID);
+            Attributes.Close();
+            Datasets.Close();
+            H5F.close(ID);
+        }
+
+        public void Datasets(object v)
+        {
+            throw new NotImplementedException();
         }
 
 
@@ -69,9 +68,6 @@ namespace hdf5lib
         {
             get => Datasets[name];
         }
-
-
-
     }
 
     public enum FileAccessMode : uint

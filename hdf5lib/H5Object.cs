@@ -1,7 +1,9 @@
 ﻿using HDF.PInvoke;
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -31,7 +33,7 @@ namespace hdf5lib
     /// Represents a collection of <see cref="H5Object"/> with controlled access.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class H5Collection<T> where T : H5Object
+    public sealed class H5Collection<T> : IEnumerable<T> where T : H5Object 
     {
         // TODO : this needs to implement IENUMEBRABLE
         Dictionary<string, T> dictonary;
@@ -58,60 +60,25 @@ namespace hdf5lib
             newItem.Create(parentID);
             dictonary.Add(newItem.Name, newItem);
         }
+
+
+
+        internal void Close()
+        {
+            foreach(T obj in dictonary.Values)
+                obj.Close();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return dictonary.Values.GetEnumerator();
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return dictonary.Values.GetEnumerator();
+        }
     }
-
-
-
-    //internal abstract class H5O
-    //{
-
-    //}
-
-    //internal sealed class H5OC<T> where T : H5O
-    //{
-
-    //}
-
-    //internal interface IH5Iterable<T> where T : H5O
-    //{
-    //    /// <summary>
-    //    /// Exposes a method to extract all elements of a particular type from a parent node.
-    //    /// </summary>
-    //    /// <param name="parentID"></param>
-    //    /// <returns></returns>
-    //    internal H5OC<T> ExtractAll2(long parentID);
-    //}
-
-
-
-
-
-    //internal class A : H5O, IH5Iterable<A>
-    //{
-    //    H5OC<A> IH5Iterable<A>.ExtractAll2(long parentID)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    internal H5OC<A> ExtractAll(long parentID)
-    //    {
-    //        return this.ExtractAll2(parentID);
-    //    }
-    //}
-
-
-
-    //internal class B
-    //{
-    //    A a = new A();
-
-    //    void foo()
-    //    {
-
-    //        H5OC<A> it = a.ExtractAll(0);
-    //    }
-
-    //}
 }
 
 

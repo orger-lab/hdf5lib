@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using HDF.PInvoke;
@@ -16,114 +18,59 @@ namespace hdf5lib
             }
         }
 
-
         /// <summary>
-        /// Converts native datatypes to the equivalent H5T code.
+        /// Converts a given index to the respective position in a multidimentional array.
+        /// (Equivalent to MATLAB's ind2sub)
         /// </summary>
-        /// <param name="type">.NET data type</param>
-        /// <returns>H5T enumerated value for the input data type</returns>
-        /// <exception cref="NotSupportedException"></exception>
-        public static long ConvertTypeToH5T(Type type)
+        /// <param name="dataShape">Number of elements in each dimention of the array</param>
+        /// <param name="index">Index to retrieve</param>
+        /// <returns></returns>
+        internal static int[] ConvertIndexToSubscript(int[] dataShape, int index)
         {
-            // Boolean
-            // bool
-            if (type == typeof(bool))
-                return H5T.NATIVE_HBOOL;
+            if (index < 0)
+                throw new IndexOutOfRangeException($"{nameof(index)} must be greater than zero.");
 
-            // Integers
-            // sbyte
-            if (type == typeof(sbyte))
-                return H5T.NATIVE_INT8;
-            // byte
-            if (type == typeof(byte))
-                return H5T.NATIVE_UINT8;
-            // short
-            if (type == typeof(short))
-                return H5T.NATIVE_INT16;
-            // ushort
-            if (type == typeof(ushort))
-                return H5T.NATIVE_UINT16;
-            // int
-            if (type == typeof(int))
-                return H5T.NATIVE_INT32;
-            // uint
-            if (type == typeof(uint))
-                return H5T.NATIVE_UINT32;
-            // long
-            if (type == typeof(long))
-                return H5T.NATIVE_INT64;
-            // ulong
-            if (type == typeof(ulong))
-                return H5T.NATIVE_UINT64;
-
-            // Floating point
-            // float
-            if (type == typeof(float))
-                return H5T.NATIVE_FLOAT;
-            // double
-            if (type == typeof(double))
-                return H5T.NATIVE_DOUBLE;
-
-            if (type == typeof(char))
-                return H5T.NATIVE_CHAR;
-            //if (type == typeof(string))
-            //    return H5T;
+            int numberOfElements = dataShape[0];
+            for (int i = 1; i < dataShape.Length; i++)
+                numberOfElements *= dataShape[i];
+            if(index > numberOfElements)
+                throw new IndexOutOfRangeException($"{nameof(index)} is outside the array.");
 
 
-            throw new NotSupportedException($"Type {type} is not supported.");
+            int[] result = new int[dataShape.Length];
+            // N-Dimentional case - process all dimentions except the first 2.
+            if (dataShape.Length > 2)
+            {
+                var k = cumprod(dataShape);
+
+                for (int i = dataShape.Length-1; i >= 2; i--)
+                {
+                    var vi = (index) % k[i-1];
+                    var vj = (index - vi) / k[i-1];
+                    result[i] = vj;
+                    index = vi;
+                }
+            }
+            // 2D case
+            if (dataShape.Length >= 2)
+            {
+                result[0] = (index % dataShape[0]);
+                result[1] = (index - result[0]) / dataShape[0];
+            }
+            else // 1D case
+            {
+                result[0] = index;
+            }
+            return result;
         }
 
-        /// <summary>
-        /// Converts an H5T type object to the native Type object.
-        /// </summary>
-        /// <param name="type">handle the to the H5T object</param>
-        /// <returns></returns>
-        /// <exception cref="InvalidCastException"></exception>
-        /// <exception cref="NotImplementedException"></exception>
-        public static Type ConvertH5TToType(long type)
+        static int[] cumprod(int[] size)
         {
-            var size = (int)H5T.get_size(type);
-            //var endianess = H5T.get_order(type);
-            var clss = H5T.get_class(type);
-            var signal = H5T.get_sign(type);
-
-            switch (clss)
-            {
-                case H5T.class_t.INTEGER:
-                    if (signal == H5T.sign_t.NONE)
-                    {
-                        switch (size)
-                        {
-                            case 1: return typeof(byte);
-                            case 2: return typeof(ushort);
-                            case 4: return typeof(uint);
-                            case 8: return typeof(ulong);
-                            default: throw new InvalidCastException();
-                        }
-                    }
-                    else
-                    {
-                        switch (size)
-                        {
-                            case 1: return typeof(sbyte);
-                            case 2: return typeof(short);
-                            case 4: return typeof(int);
-                            case 8: return typeof(long);
-                            default: throw new InvalidCastException();
-                        }
-                    }
-                case H5T.class_t.FLOAT:
-                    if (size == 4)
-                        return typeof(float);
-                    if (size == 8)
-                        return typeof(double);
-                    throw new InvalidCastException();
-
-                case H5T.class_t.STRING:
-                    return typeof(string);
-
-                default: throw new NotImplementedException();
-            }
+            int[] result = new int[size.Length];
+            result[0]=size[0];
+            for (int i = 1; i < result.Length; i++)
+                result[i] = size[i] * result[i-1];
+            return result;
         }
     }
 }
