@@ -52,13 +52,6 @@ namespace hdf5lib
             H5F.close(ID);
         }
 
-        public void Datasets(object v)
-        {
-            throw new NotImplementedException();
-        }
-
-
-
         /// <summary>
         /// Returns a link to an existing dataset in the file.
         /// </summary>

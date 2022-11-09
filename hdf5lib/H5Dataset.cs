@@ -35,7 +35,7 @@ namespace hdf5lib
         /// </summary>
         /// <param name="fileID"></param>
         /// <param name="name"></param>
-        public H5DataSet(long fileID, string name)
+        private H5DataSet(long fileID, string name)
         {
             // open file
             ID = H5D.open(fileID, $"/{name}");
@@ -411,8 +411,6 @@ namespace hdf5lib
             return finalShape;
         }
 
-
-
         public Array this[ulong[] start, ulong[] count]
         {
             get => Read(start,count,false);
@@ -423,8 +421,6 @@ namespace hdf5lib
         {
             set => Write(start, value);
         }
-
-
 
 
         // THIS WONT WORK ON .NET STANDARD

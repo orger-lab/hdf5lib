@@ -40,11 +40,10 @@ public class H5Attribute : H5Object
     public H5Attribute(string name, char value) : this(name, Array.CreateInstance(typeof(char), 1)) { Data.SetValue(value, 0); }
     public H5Attribute(string name, string value) : this(name, Array.CreateInstance(typeof(string), 1)) { Data.SetValue(value, 0); }
 
-    internal H5Attribute(string name)
+    private H5Attribute(string name)
     {
         Name = name;
     }
-
 
     internal override void Create(long parentID)
     {
@@ -60,7 +59,6 @@ public class H5Attribute : H5Object
             Close();
         }
     }
-
 
     void CreateDataSpace(Array data)
     {
@@ -84,7 +82,6 @@ public class H5Attribute : H5Object
 
     void Write()
     {
-
         GCHandle handle;
         if (DataType.Native == typeof(string))
         {
@@ -162,7 +159,6 @@ public class H5Attribute : H5Object
             H5A.read(attributeID, typeHandle, buf);
             handle.Free();
         }
-
     }
 
     internal override void Close()
@@ -173,204 +169,6 @@ public class H5Attribute : H5Object
         var status = H5A.close(ID);
         CheckAndThrow(status);
     }
-
-
-
-
-    //internal void ReadVlen()
-    //{
-    //    var nf = @"..\..\..\..\teststr.h5";
-    //    var fh = H5F.open(nf, H5F.ACC_RDONLY);
-
-    //    var attr_name = "str3";
-
-
-    //    var attributeID = H5A.open(fh, attr_name);
-
-
-    //    var typeHandle = H5A.get_type(attributeID);
-
-
-
-
-
-    //    var size = H5T.get_size(typeHandle);
-    //    var pad = H5T.get_strpad(typeHandle);
-    //    var cset = H5T.get_cset(typeHandle);
-
-    //    // get the storage size and space_id
-    //    var storage_size = H5A.get_storage_size(attributeID);
-    //    var space_id = H5A.get_space(attributeID);
-    //    var fscount = H5S.get_simple_extent_npoints(space_id);
-
-
-
-
-    //    var ndims = H5S.get_simple_extent_ndims(space_id);
-    //    var Dimensions = new ulong[ndims];
-    //    var MaxDimensions = new ulong[ndims];
-    //    var result = H5S.get_simple_extent_dims(space_id, Dimensions, MaxDimensions);
-
-
-
-
-    //    //var rrr = Array.CreateInstance(typeof(string),new int[] {1,1});
-    //    var rrr = Array.CreateInstance(typeof(string), Array.ConvertAll(Dimensions, p => (int)p));
-    //    //GCHandle rrrhnd = GCHandle.Alloc(rrr, GCHandleType.Pinned);
-
-
-    //    IntPtr[] rdata = new IntPtr[fscount];
-    //    GCHandle hnd = GCHandle.Alloc(rdata, GCHandleType.Pinned);
-
-
-
-    //    H5A.read(attributeID, typeHandle, hnd.AddrOfPinnedObject());
-
-
-    //    for (int i = 0; i < rdata.Length; ++i)
-    //    {
-    //        int len = 0;
-    //        while (Marshal.ReadByte(rdata[i], len) != 0) { ++len; }
-
-    //        byte[] buffer = new byte[len];
-
-    //        Marshal.Copy(rdata[i], buffer, 0, buffer.Length);
-
-    //        var s = Encoding.UTF8.GetString(buffer);
-
-
-
-
-    //        var siz = rrr.GetLength(0);
-    //        var ndx = i;
-
-    //        var vi = (ndx-1 % siz)  + 1;
-    //        var v2 = ((ndx - vi)/siz + 1);
-    //        var v1 = vi;
-
-
-    //        var pos = new int[2];
-    //        switch (i)
-    //        {
-    //            case 0:
-    //                pos[0] = 0;
-    //                pos[1] = 0;
-    //                break;
-    //            case 1:
-    //                pos[0] = 0;
-    //                pos[1] = 1;
-    //                break;
-    //            case 2:
-    //                pos[0] = 1;
-    //                pos[1] = 0;
-    //                break;
-    //            case 3:
-    //                pos[0] = 1;
-    //                pos[1] = 1;
-    //                break;
-
-
-    //        }
-
-
-    //        //rrr.SetValue(int.Parse(s), pos);
-
-    //    }
-    //}
-
-
-
-
-
-    //public void Create(long parentID, string name, Array data)
-    //{
-    //    CreateDataSpace(data);
-    //    CreateAttribute();
-
-    //    int result;
-
-    //    unsafe
-    //    {
-    //        fixed (T* ptr = data)
-    //        {
-    //            result = H5A.write(ID, h5tType, (IntPtr)ptr);
-    //            CheckAndThrow(spaceID);
-    //        }
-    //    }
-
-    //    result = H5S.close(spaceID);
-    //    CheckAndThrow(result);
-
-    //    result = H5A.close(ID);
-    //    CheckAndThrow(result);
-    //}
-
-
-
-    /*
-
-
-    public static void Create<T>(long parentID, string name, T[] data) where T : unmanaged
-    {
-        var h5tType = ConvertTypeToH5T(typeof(T));
-
-        var dimensions = new ulong[] { (ulong)data.Length };
-
-        var spaceID = H5S.create_simple(dimensions.Length, dimensions, null);
-        CheckAndThrow(spaceID);
-
-        var ID = H5A.create(parentID, name, h5tType, spaceID, H5P.DEFAULT);
-        CheckAndThrow(ID);
-
-        int result;
-
-        unsafe
-        {
-            fixed (T* ptr = data)
-            {
-                result = H5A.write(ID, h5tType, (IntPtr)ptr);
-                CheckAndThrow(spaceID);
-            }
-        }
-
-        result = H5S.close(spaceID);
-        CheckAndThrow(result);
-
-        result = H5A.close(ID);
-        CheckAndThrow(result);
-    }
-
-
-    public void Create(long parentID, string name, string data)
-    {
-        byte[] encodedString = Encoding.ASCII.GetBytes(data);
-
-        var dimensions = new ulong[] { (ulong)encodedString.Length };
-
-        var spaceID = H5S.create_simple(dimensions.Length, dimensions, null);
-        CheckAndThrow(spaceID);
-
-        var ID = H5A.create(parentID, name, H5T.NATIVE_CHAR, spaceID, H5P.DEFAULT);
-        CheckAndThrow(ID);
-
-        int result;
-
-        unsafe
-        {
-            fixed (byte* ptr = encodedString)
-            {
-                result = H5A.write(ID, H5T.NATIVE_CHAR, (IntPtr)ptr);
-                CheckAndThrow(spaceID);
-            }
-        }
-
-        result = H5S.close(spaceID);
-        CheckAndThrow(result);
-
-        result = H5A.close(ID);
-        CheckAndThrow(result);
-    }
-    */
 
     internal static H5Collection<H5Attribute> ExtractAll(long parentID)
     {

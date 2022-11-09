@@ -37,6 +37,9 @@ namespace hdf5lib_tests
 
 
 
+            file.Datasets.Add(new H5DataSet()
+
+
             var data = file["dsetname"].Read();
 
 
