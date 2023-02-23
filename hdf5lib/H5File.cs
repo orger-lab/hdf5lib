@@ -47,7 +47,7 @@ namespace hdf5lib
         /// </summary>
         public void Close()
         {
-            Attributes.Close();
+            //Attributes.Close();
             Datasets.Close();
             H5F.close(ID);
         }
