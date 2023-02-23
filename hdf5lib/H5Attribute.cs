@@ -50,6 +50,7 @@ public class H5Attribute : H5Object
         if (Data == null)
         {
             Read(parentID);
+            Close();
         }
         else
         {
