@@ -141,10 +141,10 @@ usecase when working with images off of a camera.
 Adding attributes is similar to adding datasets:
 
 ```c#
-myFile.Attributes.Add(new H5Attribute("fileAttr", 1));
+myFile.Attributes.Add(new H5Attribute("fileAttr", 1)); // attribute on a file
 myFile["testDataset"].Attributes.Add(
 	new H5Attribute("pixels", new float[] { 0.8f, 0.8f, 1.0f })
-	);
+	); // attribute on a dataset
 ```
 Attributes can be added directly to the file, or they can
 be added to individual datasets.
