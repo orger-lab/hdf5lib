@@ -90,7 +90,7 @@ namespace hdf5lib
                     SetCompression(compressionFilter, compressionOptions);
                 }
             }
-            //TODO : there is no path for when chunks is null but not the filter
+            //TODO: there is no path for when chunks is null but not the filter
         }
 
         private void CreateDataSpace(ulong[] dimensions)
@@ -166,24 +166,10 @@ namespace hdf5lib
         public unsafe void Write<T>(ulong[] start, ulong[] count, ulong[] dimsToWrite, T[] dataToWrite) where T : unmanaged
         {
             ValidateInputRank(start, count);
-            int status;
-            long memorySpaceID;
 
             fixed (T* buf = dataToWrite)
-            fixed (ulong* startPtr = start)
-            fixed (ulong* countPtr = count)
             {
-                status = H5S.select_hyperslab(dataSpaceID, H5S.seloper_t.SET, startPtr, null, countPtr, null);
-                CheckAndThrow(status);
-
-                memorySpaceID = H5S.create_simple(dimsToWrite.Length, dimsToWrite, null);
-                CheckAndThrow(memorySpaceID);
-
-                status = H5D.write(ID, DataType.HDF5, memorySpaceID, dataSpaceID, H5P.DEFAULT, (IntPtr)buf);
-                CheckAndThrow(status);
-
-                status = H5S.close(memorySpaceID);
-                CheckAndThrow(status);
+                this.Write(start, count, dimsToWrite, (IntPtr)buf);
             }
         }
 
@@ -384,7 +370,7 @@ namespace hdf5lib
                 var emptyDimensions = 0;
                 for (int i = 0; i < count.Length; i++)
                 {
-                    if (count.Length == 1)
+                    if (count[i] == 1)
                         emptyDimensions++;
                 }
                 finalShape = new ulong[count.Length - emptyDimensions];
