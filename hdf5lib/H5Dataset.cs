@@ -443,7 +443,7 @@ namespace hdf5lib
 
         internal override void Close()
         {
-            Attributes.Close();
+            //Attributes.Close();
             H5P.close(propertyListID);
             H5S.close(dataSpaceID);
             H5D.close(ID);
