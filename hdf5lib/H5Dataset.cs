@@ -177,10 +177,14 @@ namespace hdf5lib
         {
             ValidateInputRank(start, count);
 
+            var sizeofData =  (float)Marshal.SizeOf(dataToWrite.GetType().GetElementType());
+            var sizeofNative = Marshal.SizeOf(this.DataType.Native);
+            var sizeRatio = sizeofData / sizeofNative;
+
             var dimsToWrite = new ulong[dataToWrite.Rank];
             for (int i = 0; i < dimsToWrite.Length; i++)
             {
-                dimsToWrite[i] = (ulong)dataToWrite.GetLength(i);
+                dimsToWrite[i] = (ulong)(dataToWrite.GetLength(i) * sizeRatio );
             }
 
             int status;

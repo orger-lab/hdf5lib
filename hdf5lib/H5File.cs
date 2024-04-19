@@ -19,7 +19,7 @@ namespace hdf5lib
         public H5File(string filePath, FileCreationMode mode = FileCreationMode.Fail)
         {
             ID = H5F.create(filePath, (uint)mode, H5P.DEFAULT, H5P.DEFAULT);
-            Utils.CheckAndThrow(ID);
+            Utils.CheckAndThrow(ID,$"Failed to create new file at {filePath}.");
 
             Datasets = new H5Collection<H5DataSet>(ID);
             Attributes = new H5Collection<H5Attribute>(ID);
@@ -33,7 +33,7 @@ namespace hdf5lib
         public H5File(string filePath, FileAccessMode mode = FileAccessMode.ReadOnly)
         {
             ID = H5F.open(filePath, (uint)mode);
-            Utils.CheckAndThrow(ID);
+            Utils.CheckAndThrow(ID, $"Failed to open existing file {filePath}.");
 
             Datasets = H5DataSet.ExtractAll(ID);
             Attributes  = H5Attribute.ExtractAll(ID);

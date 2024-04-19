@@ -10,11 +10,11 @@ namespace hdf5lib
 {
     public static class Utils
     {
-        internal static void CheckAndThrow(long status)
+        internal static void CheckAndThrow(long status,string message = "")
         {
             if (status == -1)
             {
-                throw new Exception();
+                throw new Exception("message");
             }
         }
 
