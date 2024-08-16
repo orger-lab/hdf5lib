@@ -1,7 +1,5 @@
 ﻿using HDF.PInvoke;
 
-using System;
-
 namespace hdf5lib
 {
     public class H5File

@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Text;
-
-using HDF.PInvoke;
 
 namespace hdf5lib
 {
@@ -14,15 +8,15 @@ namespace hdf5lib
         {
             if (status == -1)
             {
-                throw new Exception("message");
+                throw new Exception(message);
             }
         }
 
         /// <summary>
-        /// Converts a given index to the respective position in a multidimentional array.
+        /// Converts a given index to the respective position in a multidimensional array.
         /// (Equivalent to MATLAB's ind2sub)
         /// </summary>
-        /// <param name="dataShape">Number of elements in each dimention of the array</param>
+        /// <param name="dataShape">Number of elements in each dimension of the array</param>
         /// <param name="index">Index to retrieve</param>
         /// <returns></returns>
         internal static int[] ConvertIndexToSubscript(int[] dataShape, int index)
@@ -38,7 +32,7 @@ namespace hdf5lib
 
 
             int[] result = new int[dataShape.Length];
-            // N-Dimentional case - process all dimentions except the first 2.
+            // N-Dimensional case - process all dimensions except the first 2.
             if (dataShape.Length > 2)
             {
                 var k = cumprod(dataShape);

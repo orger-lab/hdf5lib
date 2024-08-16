@@ -109,12 +109,12 @@ public class H5Attribute : H5Object
 
     void Read(long parentID)
     {
-        var attributeID = H5A.open(parentID, Name);
+        ID = H5A.open(parentID, Name);
 
-        var typeHandle = H5A.get_type(attributeID);
+        var typeHandle = H5A.get_type(ID);
         DataType = new DataType(typeHandle);
 
-        var dataSpaceID = H5A.get_space(attributeID);
+        var dataSpaceID = H5A.get_space(ID);
 
         var ndims = H5S.get_simple_extent_ndims(dataSpaceID);
 
@@ -132,7 +132,7 @@ public class H5Attribute : H5Object
             var dataPointers = new IntPtr[numberOfElements];
             var handle = GCHandle.Alloc(dataPointers, GCHandleType.Pinned);
 
-            H5A.read(attributeID, typeHandle, handle.AddrOfPinnedObject());
+            H5A.read(ID, typeHandle, handle.AddrOfPinnedObject());
 
             int[] dataShape = new int[Data.Rank];
             for (int i = 0; i < dataShape.Length; i++)
@@ -157,7 +157,7 @@ public class H5Attribute : H5Object
         {
             var handle = GCHandle.Alloc(Data, GCHandleType.Pinned);
             IntPtr buf = handle.AddrOfPinnedObject();
-            H5A.read(attributeID, typeHandle, buf);
+            H5A.read(ID, typeHandle, buf);
             handle.Free();
         }
     }

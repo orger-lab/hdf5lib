@@ -2,7 +2,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.InteropServices;
 
 using static hdf5lib.Utils;
@@ -19,8 +18,8 @@ namespace hdf5lib
         // TODO : understand how the plist is required to update parameters after the dataset is created or loaded
         private long propertyListID; 
 
-        private int compressionFilter; // i dont think this is needed after the ctor if it cannot be changed
-        private uint[] compressionOpts; // i dont think this is needed after the ctor if it cannot be changed
+        private int compressionFilter; // i don't think this is needed after the ctor if it cannot be changed
+        private uint[] compressionOpts; // i don't think this is needed after the ctor if it cannot be changed
 
         public ulong[] Dimensions { get; private set; }
         public ulong[] MaxDimensions { get; private set; }
@@ -41,7 +40,7 @@ namespace hdf5lib
             ID = H5D.open(fileID, $"/{name}");
             CheckAndThrow(ID);
 
-            // get spaceid
+            // get space id
             dataSpaceID = H5D.get_space(ID);
             CheckAndThrow(dataSpaceID);
 
@@ -362,11 +361,11 @@ namespace hdf5lib
         /// </summary>
         /// <param name="start"></param>
         /// <param name="count"></param>
-        /// <param name="removeEmpty">Wheter or not remove empty dimensions.</param>
+        /// <param name="removeEmpty">Whether or not remove empty dimensions.</param>
         /// <returns></returns>
         private ulong[] CalculateFinalDataShape(ulong[] start, ulong[] count, bool removeEmpty)
         {
-            // TODO : check the behavoir when trying to extract a single element of a multidimentional array. I'm very confident finalShape will explode.
+            // TODO : check the behavior when trying to extract a single element of a multidimensional array. I'm very confident finalShape will explode.
             ulong[] finalShape;
 
             if (removeEmpty)
