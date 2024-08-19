@@ -14,7 +14,7 @@ public class H5Attribute : H5Object
     long dataSpaceID;
     public DataType DataType { get; private set; }
 
-    Array Data;
+    public Array Data { get; private set; }
     ulong[] Dimensions;
     ulong[] MaxDimensions;
 
@@ -44,6 +44,33 @@ public class H5Attribute : H5Object
     {
         Name = name;
     }
+
+    /// <summary>
+    /// Get the value of the attribute. This will only work for 1D Attributes.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public T DataAs<T>()
+    {
+        T[] data = (T[])Data;
+        T value = data[0];
+        return value;
+    }
+
+    //public dynamic DataAs()
+    //{
+    // This makes the call slightly cleaner but needs to be implement for all data types. Have fun.
+    //    if (DataType.Native == typeof(int))
+    //    {
+    //        return DataAs<int>();
+    //    }
+    //    else
+    //    {
+    //        return DataAs<string>();
+    //    }
+    //}
+
+
 
     internal override void Create(long parentID)
     {

@@ -249,7 +249,9 @@ namespace hdf5lib
         public void Read(ulong[] start, ulong[] count, bool removeEmpty, IntPtr data)
         {
             ValidateInputRank(start, count);
-            var dataShape = CalculateFinalDataShape(start, count, removeEmpty);
+
+            //var dataShape = CalculateFinalDataShape(start, count, removeEmpty);
+            var dataShape = count;
 
 
             unsafe
